@@ -28,7 +28,6 @@ public:
         MinStakeInterval,
         SecureMessaging,     /**< Default Transaction Fee. bool */
         ThinMode,            /**< Default Transaction Fee. bool */
-        ThinStake,           /**< Default Transaction Fee. bool */
         ThinFullIndex,
         ThinIndexWindow,
         AutoRingSize,        /**< Default Transaction Fee. bool */

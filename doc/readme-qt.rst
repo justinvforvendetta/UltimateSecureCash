@@ -1,4 +1,4 @@
-Shadow: Qt5 GUI for UltimateSecureCash
+Shadow: Qt5 GUI for ShadowCoin
 ===============================
 
 Build instructions
@@ -12,10 +12,7 @@ distribution are installed, for Debian and Ubuntu these are:
 
 ::
 
-    apt-get install qt5-default qt5-qmake qtbase5-dev-tools qttools5-dev-tools \
-        build-essential libboost-dev libboost-system-dev \
-        libboost-filesystem-dev libboost-program-options-dev libboost-thread-dev \
-        libssl-dev libdb++-dev libminiupnpc-dev
+    apt-get install qt5-default qt5-qmake qtbase5-dev-tools qttools5-dev-tools build-essential libboost-dev libboost-system-dev libboost-filesystem-dev libboost-program-options-dev libboost-thread-dev libssl-dev libdb++-dev libminiupnpc-dev libqt5webkit5-dev
 
 then execute the following:
 
@@ -26,7 +23,13 @@ then execute the following:
 
 Alternatively, install Qt Creator and open the `shadow.pro` file.
 
-An executable named `shadow` will be built.
+An executable named `umbra` will be built.
+
+You can install the binary with:
+
+::
+
+   make install
 
 
 Windows
@@ -69,7 +72,7 @@ Build configuration options
 UPNnP port forwarding
 ---------------------
 
-To use UPnP for port forwarding behind a NAT router (recommended, as more connections overall allow for a faster and more stable ultimatesecurecash experience), pass the following argument to qmake:
+To use UPnP for port forwarding behind a NAT router (recommended, as more connections overall allow for a faster and more stable shadowcoin experience), pass the following argument to qmake:
 
 ::
 
@@ -103,8 +106,8 @@ FreeDesktop notification interface through DBUS using the following qmake option
 Generation of QR codes
 -----------------------
 
-libqrencode may be used to generate QRCode images for payment requests. 
-It can be downloaded from http://fukuchi.org/works/qrencode/index.html.en, or installed via your package manager. Pass the USE_QRCODE 
+libqrencode may be used to generate QRCode images for payment requests.
+It can be downloaded from http://fukuchi.org/works/qrencode/index.html.en, or installed via your package manager. Pass the USE_QRCODE
 flag to qmake to control this:
 
 +--------------+--------------------------------------------------------------------------+
@@ -117,9 +120,9 @@ flag to qmake to control this:
 Berkely DB version warning
 ==========================
 
-A warning for people using the *static binary* version of UltimateSecureCash on a Linux/UNIX-ish system (tl;dr: **Berkely DB databases are not forward compatible**).
+A warning for people using the *static binary* version of ShadowCoin on a Linux/UNIX-ish system (tl;dr: **Berkely DB databases are not forward compatible**).
 
-The static binary version of UltimateSecureCash is linked against libdb 5.0 (see also `this Debian issue`_).
+The static binary version of ShadowCoin is linked against libdb 5.0 (see also `this Debian issue`_).
 
 Now the nasty thing is that databases from 5.X are not compatible with 4.X.
 

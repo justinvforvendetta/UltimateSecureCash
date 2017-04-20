@@ -38,6 +38,24 @@
     font-style: italic;
 }
 
+@import url(https://fonts.googleapis.com/css?family=Noto+Sans:400,400italic);
+
+@font-face { 
+    font-family: "NotoCJK Japanese"; 
+    font-weight: 400; 
+    src: url("qrc:///fonts/japanese.otf"); 
+}
+@font-face { 
+    font-family: "NotoCJK Chinese simplified"; 
+    font-weight: 400; 
+    src: url("qrc:///fonts/chinese_s.otf"); 
+}
+@font-face { 
+    font-family: "NotoCJK Chinese traditional"; 
+    font-weight: 400; 
+    src: url("qrc:///fonts/chinese_t.otf"); 
+}
+
 
 /* Page specific */
 html,body { height: 100%; margin: 0px; padding: 0px; }
@@ -62,6 +80,7 @@ h2 {
 }
 h1, h2, h3, h4, h5, h6 {
     text-transform: uppercase;
+    line-height: 1.1em;
 }
 
 input:focus {
@@ -77,7 +96,7 @@ a, a:focus {
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
     -webkit-appearance:none;
-    /*border-radius: none !important; background: #000000; color: red;*/
+    /*border-radius: none !important; background: #131218; color: red;*/
 }
 
 p {
@@ -119,7 +138,7 @@ td {
 
 tbody tr.selected {
     font-weight:700;
-    color: #000000;
+    color: #131218;
 }
 
 tbody tr.selected input {
@@ -131,13 +150,13 @@ tbody tr.selected input {
 tbody tr.selected:hover,
 tbody tr.selected td:hover {
     background: #ECF0F1!important;
-    color: #000000;
+    color: #131218;
     font-weight:700;
 }
 
 .pagination.selected,
 .pagination:hover {
-    background:#eab522!important;
+    background:#E5203D!important;
 }
 
 /* Vertical Menu */
@@ -213,7 +232,7 @@ Add transition to containers so they can push in and out.
 }
 
 #navpanel {
-    background: #000000;
+    background: #131218;
     margin-left: -135px;
     width: 17%;
     position: fixed;
@@ -487,7 +506,7 @@ article {
 }
 
 .content .flex-item + .flex-item {
-    border-top: 1px solid #000000;
+    border-top: 1px solid #131218;
 }
 
 
@@ -501,7 +520,7 @@ article {
 #layout.active #navpanel {
     left: 135px;
     width: 40%;
-    border: 1px solid #000000;
+    border: 1px solid #131218;
 }
 
 
@@ -547,7 +566,7 @@ article {
 }
 
     progress::-webkit-progress-bar {
-            background: #000000;
+            background: #131218;
             border-radius: 50px;
             padding: 2px;
             box-shadow: 0 1px 0px 0 rgba(255, 255, 255, 0.2);
@@ -559,7 +578,7 @@ article {
             background:
                     -webkit-linear-gradient(45deg, transparent, transparent 33%, rgba(0, 0, 0, 0.1) 33%, rgba(0, 0, 0, 0.1) 66%, transparent 66%),
                     -webkit-linear-gradient(top, rgba(255, 255, 255, 0.25), rgba(0, 0, 0, 0.2)),
-                    -webkit-linear-gradient(left, #eab522, #e41c39);
+                    -webkit-linear-gradient(left, #e5203d, #e41c39);
 
             /* Looks great, now animating it */
             background-size: 25px 14px, 100% 100%, 100% 100%;
@@ -578,6 +597,7 @@ article {
 #navpanel [href='#addressbook']:before,
 #navpanel [href='#messages']:before,
 #navpanel [href='#chaindata']:before,
+#navpanel [href='#blockdata']:before,
 #navpanel [href='#news']:before {
     height: 20px;
     width: 20px;
@@ -599,8 +619,9 @@ article {
 #navpanel .selected [href='#addressbook']:before,
 #navpanel .selected [href='#messages']:before,
 #navpanel .selected [href='#chaindata']:before,
+#navpanel .selected [href='#blockdata']:before,
 #navpanel .selected [href='#news']:before {
-    background: #eab522;
+    background: #e5203d;
 }
 
 #navpanel [href='#overview']:before {
@@ -631,9 +652,15 @@ article {
     -webkit-mask-position-y: -274px;
 }
 
-#navpanel [href='#news']:before {
+#navpanel [href='#blockdata']:before {
     -webkit-mask-position-y: -319px;
 }
+
+#navpanel [href='#news']:before {
+    -webkit-mask-position-y: -364px;
+}
+
+
 /* End - Navigation panel items */
 
 
@@ -653,7 +680,7 @@ small screens.
     display: block; /* show this only on small screens */
     top: 0;
     left: 0; /* "#menu width" */
-    background: #000000;
+    background: #131218;
     background: rgba(0,0,0,0.7);
     font-size: 10px; /* change this value to increase/decrease button size */
     z-index: 10;
@@ -664,7 +691,7 @@ small screens.
 
     #navlink:hover,
     #navlink:focus {
-        background: #000000;
+        background: #131218;
     }
 
     #navlink span {
@@ -695,7 +722,7 @@ small screens.
 {    font-size:0.7em;
     text-align: center;
     color: #fff;
-    background: #000000;
+    background: #131218;
     position: absolute;
     z-index: 99999999;
     padding: 10px;
@@ -708,7 +735,7 @@ small screens.
     height: 0;
     border-left: 10px solid transparent;
     border-right: 10px solid transparent;
-    border-top: 10px solid #000000;
+    border-top: 10px solid #131218;
     content: '';
     position: absolute;
     left: 50%;
@@ -719,7 +746,7 @@ small screens.
 #tooltip.top:after
 {
     border-top-color: transparent;
-    border-bottom: 10px solid #000000;
+    border-bottom: 10px solid #131218;
     top: -20px;
     bottom: auto;
 }
@@ -745,7 +772,6 @@ small screens.
 #chaindata .footable {
     table-layout: initial;
 }
-
 
 .footable > thead > tr > th > span.footable-sort-indicator:before {
     content: "\f0dc";
@@ -777,14 +803,14 @@ small screens.
 }
 
 .footable.shadow {
-    border-color: #eab522;
+    border-color: #e5203d;
 }
 .footable.shadow > tfoot > tr > th,
 .footable.shadow > thead > tr > th,
 .footable.shadow > tfoot > tr > td,
 .footable.shadow > thead > tr > td {
-    background-color: #eab522;
-    border-color: #eab522;
+    background-color: #e5203d;
+    border-color: #e5203d;
 }
 
 .footable > thead > tr > th,.footable > thead > tr > td {
@@ -823,7 +849,7 @@ tr.footable-row-detail {
 }
 
 .transaction-overview span.sent {
-    color: #eab522;
+    color: red;
 }
 
 .received {
@@ -835,12 +861,12 @@ tr.footable-row-detail {
 }
 
 .outofsync {
-    color: #eab522;
+    color: red;
 }
 
 
 .light-red {
-color: rgb(229, 28, 57);
+color: rgb(228, 26, 26);
 }
 
 .none {
@@ -922,13 +948,13 @@ color: rgb(229, 28, 57);
     cursor: pointer;
     -webkit-transition: font-size 0.6s, color 0.6s, -webkit-transform 0.6s;
     transition: font-size 0.6s, color 0.6s, transform 0.6s;
-    color:#000000;
+    color:#131218;
 }
 
 #overview .wallet.expanded i {
     font-size: 16px !important;
     cursor: pointer;
-    color: #000000;
+    color: #131218;
     float: left;
 }
 
@@ -991,7 +1017,7 @@ color: rgb(229, 28, 57);
 }
 
 .total-balance .staking {
-    color: #000000;
+    color: #131218;
     font-size: 0.7em;
     display: block;
     margin-top: 10px;
@@ -1008,7 +1034,7 @@ color: rgb(229, 28, 57);
 .total-balance .staking .cents {
     font-size: 16px;
     font-family: "Open Sans", sans-serif;
-    color: #000000;
+    color: #131218;
     margin-left: -3px;
 }
 
@@ -1034,7 +1060,7 @@ color: rgb(229, 28, 57);
 .transaction-overview span {
     font-size: 1.1em;
     font-weight:400;
-    color: #000000;
+    color: #131218;
     font-family: "Open Sans", sans-serif;
 }
 
@@ -1348,7 +1374,7 @@ label.recipient {
 }
 
 .button.is-inverse {
-  background: #eab522;
+  background: #E51C39;
 
   color: white;
 }
@@ -1447,6 +1473,14 @@ label.recipient {
   text-align: center;
 }
 
+.small-button
+{
+    margin-right:10px; 
+    margin-left:5px; 
+    height:40px; 
+    width:40px; 
+    margin-bottom:7px;
+}
 
 /****************************
 
@@ -1883,8 +1917,13 @@ label.recipient {
     margin-left: 10px;
 }
 
+.inputError {
+    color: white !important;
+    background: #E51C39 !important;
+}
+
 .red {
-    color: ##eab522;
+    color: #D62C2C;
 }
 
 .orange {
@@ -1896,7 +1935,7 @@ label.recipient {
 }
 
 .lightred {
-    color: ##eab522;
+    color: #ff6565;
 }
 
 .green {
@@ -1950,12 +1989,20 @@ label.recipient {
 .font-16px {
     font-size: 16px !important;
 }
+.font-20px {
+    font-size: 20px !important;
+}
 .font-26px {
     font-size: 26px !important;
 }
 .font-32px {
     font-size: 32px !important;
 }
+
+.font-150px {
+    font-size: 150px !important;
+}
+
 
 
 /* -- Responsive Styles (Media Queries) ------------------------------------- */
@@ -2027,10 +2074,12 @@ Hides the menu at `56.625em`, but modify this based on your app's needs.
     }
 
     #announcements {
+         height: 100%;
 
     }
 
     #recenttxns {
+        height: 100%;
         width: 100%;
     }
 
@@ -2048,7 +2097,7 @@ Hides the menu at `56.625em`, but modify this based on your app's needs.
 
     .user-avatar .user-notifications {
         display: initial;
-        background: #eab522;
+        background: red;
         color: white;
         padding: 3px;
         font-size: 10px;
@@ -2060,7 +2109,7 @@ Hides the menu at `56.625em`, but modify this based on your app's needs.
 
     .user-avatar .user-notifications span {
         display: initial;
-        background: #eab522;
+        background: red;
         border-radius: 100%;
         font-size: 10px;
         padding-top: 1px;
@@ -2100,6 +2149,7 @@ Hides the menu at `56.625em`, but modify this based on your app's needs.
     .content .flex-item {
         padding: 0;
         border: 0;
+        height: 100%;
     }
 
     .grow {
@@ -2147,7 +2197,7 @@ Hides the menu at `56.625em`, but modify this based on your app's needs.
 
 #lean_overlay {
     position: fixed;
-    z-index:100;
+    z-index:100; 
     top: 0px;
     left: 0px;
     height:100%;
@@ -2157,6 +2207,92 @@ Hides the menu at `56.625em`, but modify this based on your app's needs.
 }
 
 .modal_close { position: absolute; top: 12px; right: 12px; display: block; width: 20px; height: 20px; z-index: 2; }
+
+#add-address-modal {
+    margin: auto;
+    padding: 20px;
+    width: 800px;
+    background: #fff;
+    border-radius: 5px; -moz-border-radius: 5px; -webkit-border-radius: 5px;
+    box-shadow: 0px 0px 4px rgba(0,0,0,0.7); -webkit-box-shadow: 0 0 4px rgba(0,0,0,0.7); -moz-box-shadow: 0 0px 4px rgba(0,0,0,0.7);
+    display: none;
+}
+
+#address-lookup-modal {
+    margin: auto;
+    padding: 20px;
+    width: 800px;
+    background: #fff;
+    border-radius: 5px; -moz-border-radius: 5px; -webkit-border-radius: 5px;
+    box-shadow: 0px 0px 4px rgba(0,0,0,0.7); -webkit-box-shadow: 0 0 4px rgba(0,0,0,0.7); -moz-box-shadow: 0 0px 4px rgba(0,0,0,0.7);
+    display: none;
+}
+
+#verify-sign-modal {
+    margin: auto;
+    padding: 20px;
+    width: 750px;
+    background: #fff;
+    border-radius: 5px; -moz-border-radius: 5px; -webkit-border-radius: 5px;
+    box-shadow: 0px 0px 4px rgba(0,0,0,0.7); -webkit-box-shadow: 0 0 4px rgba(0,0,0,0.7); -moz-box-shadow: 0 0px 4px rgba(0,0,0,0.7);
+    display: none;
+    position: absolute;
+}
+
+#verify-sign-modal input
+{
+    width:650px;
+    height:40px;
+    padding:0 10px;
+    margin-bottom:10px;
+}
+
+#verify-sign-modal textarea
+{
+    width: 698px; 
+    height: 100px;
+    padding:0 10px;
+    margin-bottom:10px;
+}
+
+
+#import-key-modal {
+    margin: auto;
+    padding: 20px;
+    width: 800px;
+    background: #fff;
+    border-radius: 5px; -moz-border-radius: 5px; -webkit-border-radius: 5px;
+    box-shadow: 0px 0px 4px rgba(0,0,0,0.7); -webkit-box-shadow: 0 0 4px rgba(0,0,0,0.7); -moz-box-shadow: 0 0px 4px rgba(0,0,0,0.7);
+    display: none;
+    position: absolute;
+}
+
+#import-key-modal label
+{
+    display: inline-block;
+    padding-right: 20px;
+    margin: 20px;
+    margin-top:15px;
+    text-align: right;
+    width:200px;
+}
+
+
+#import-key-modal input
+{
+    width:650px;
+    height:40px;
+    padding:0 10px;
+    margin-bottom:10px;
+}
+
+#import-key-modal textarea
+{
+    width: 500px; 
+    height: 50px;
+    padding:0 10px;
+    margin-bottom:10px;
+}
 
 #qrcode-modal {
     margin: auto;
@@ -2178,10 +2314,35 @@ Hides the menu at `56.625em`, but modify this based on your app's needs.
     margin: auto;
 }
 
+#blkexp-txn-modal {
+    margin: auto;
+    padding: 20px;
+    width: 900px;
+    height: 480px;
+    background: #fff;
+    border-radius: 5px; -moz-border-radius: 5px; -webkit-border-radius: 5px;
+    box-shadow: 0px 0px 4px rgba(0,0,0,0.7); -webkit-box-shadow: 0 0 4px rgba(0,0,0,0.7); -moz-box-shadow: 0 0px 4px rgba(0,0,0,0.7);
+    display: none;
+    overflow: auto;
+}
+
 #transaction-info-modal {
     margin: auto;
     padding: 20px;
-    width: 640px;
+    width: 900px;
+    height: 480px;
+    background: #fff;
+    border-radius: 5px; -moz-border-radius: 5px; -webkit-border-radius: 5px;
+    box-shadow: 0px 0px 4px rgba(0,0,0,0.7); -webkit-box-shadow: 0 0 4px rgba(0,0,0,0.7); -moz-box-shadow: 0 0px 4px rgba(0,0,0,0.7);
+    display: none;
+    overflow: auto;
+}
+
+
+#block-info-modal {
+    margin: auto;
+    padding: 20px;
+    width: 900px;
     height: 480px;
     background: #fff;
     border-radius: 5px; -moz-border-radius: 5px; -webkit-border-radius: 5px;
@@ -2216,12 +2377,17 @@ Hides the menu at `56.625em`, but modify this based on your app's needs.
     display: none;
 }
 
+.iw-contextMenu {
+    font-size: 0.9em;
+}
+
 .iw-mIcon {
-    width: 14px;
-    height: 14px;
+    width: 20px;
+    height: 20px;
     padding-right: 4px;
-    top: 3px;
     padding-left: 1px;
+    top:0;
+    vertical-align: sub;
 }
 
 #network-alert {
@@ -2230,7 +2396,7 @@ Hides the menu at `56.625em`, but modify this based on your app's needs.
     padding: 12.5px;
     width: 80%;
     font-size:0.8em;
-    color: #eab522;
+    color: #F51E3E;
     background: #ecf0f1;
     box-shadow: -1px -1px 0 0 #dee2e2, -1px 1px 0 0 #dee2e2, -2px -2px 0 0 #f8f8f8, -2px 2px 0 0 #f8f8f8;
 }
@@ -2241,7 +2407,7 @@ Hides the menu at `56.625em`, but modify this based on your app's needs.
 
 .warning {
     font-size:0.8em;
-    color: #eab522;
+    color: #F51E3E;
     background: #ecf0f1;
 }
 
@@ -2293,11 +2459,11 @@ input[type=checkbox] + label {
 }
 
 input[type=checkbox]:checked {
-    border: 2px solid #eab522;;
+    border: 2px solid #F51E3E;;
 }
 
 input[type=checkbox]:checked + label {
-    color: #eab522;
+    color: #F51E3E;
 }
 
 input[disabled] {
@@ -2320,8 +2486,6 @@ input[type=checkbox]:checked + label:before {
     display:inline-block;
 }
 
-
-
 .select-multiple label.option {
     width: 200px;
     vertical-align: top;
@@ -2342,4 +2506,141 @@ input[type=checkbox]:checked + label:before {
     opacity: 0.7;
     pointer-events: none;
     cursor: default;
+}
+
+ {
+    color:#999
+}
+
+.text-muted {
+    color:#999
+}
+
+.modal-tr
+ {
+    padding:8px;
+    line-height:1.42857143;
+    vertical-align:top;
+    border-bottom:1px solid #ddd
+}
+
+.heading-selected {
+    font-size: 1.2em;
+    margin: 0;
+    margin-bottom: 30px;
+    font-family: "Open Sans", sans-serif;
+    font-weight: 700;
+    color:#313131;
+    text-transform: uppercase;
+    white-space: normal;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.heading-deselected {
+    font-size: 1.2em;
+    margin: 0;
+    margin-bottom: 30px;
+    font-family: "Open Sans", sans-serif;
+    font-weight: 700;
+    color:#999;
+    text-transform: uppercase;
+    text-decoration: none;  
+    cursor: pointer;  
+}
+
+.optionblock {
+    width: 150px;
+    height: 350px;
+    float: left;   
+    text-align: center;
+    margin: 50px;
+    cursor: pointer;
+}
+
+.wizardback {
+    display: block;
+    position: relative;
+    float:left;
+    width: 40px;
+    height:100%;
+    top:0;
+    margin-right: 5px;
+    cursor: pointer;
+}
+
+.wizardback:before {
+    content: "\f053";
+    font-family: "FontAwesome";
+    font-size: 30px;
+    margin-top: 100px;
+    float: left;
+}
+
+.wizardfwd {
+    display: block;
+    position: relative;
+    float:right;
+    width: 40px;
+    height:100%;
+    top:0;
+    margin-left: 5px;
+    cursor: pointer;
+}
+
+.wizardfwd:after {
+    content: "\f054";
+    font-family: "FontAwesome";
+    font-size: 30px;
+    margin-top: 100px;
+    float: left;
+}
+
+.wizardblock {
+    display: block;
+    float: left;
+    height: 600px;
+    width: 800px;
+    margin: 0px 25px 0px 25px;
+}
+
+#wizards p {
+    line-height: 20px;
+}
+
+.wizardblock label {
+    margin-left: 0;
+    padding-left: 0;
+
+}
+
+.green-circle {
+    width: 20px;
+    height: 20px;
+    background-color: green;
+    -webkit-border-radius: 20px;
+    -moz-border-radius: 20px;
+    border-radius: 20px;   
+    left: 50%;  
+}
+
+.red-circle {
+    width: 20px;
+    height: 20px;
+    background-color: #F51E3E;
+    -webkit-border-radius: 20px;
+    -moz-border-radius: 20px;
+    border-radius: 20px;   
+    text-align: center;
+
+}
+
+.fa.green {
+    color: rgb(73, 151, 73);
+}
+.fa.red {
+    color: rgb(187, 53, 53);
+}
+.fa.blue {
+    color: rgb(86, 86, 165);
 }

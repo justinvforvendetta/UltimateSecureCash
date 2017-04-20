@@ -39,7 +39,7 @@ QString BitcoinUnits::name(int unit)
     case USC: return QString("USC");
     case mUSC: return QString("mUSC");
     case uUSC: return QString::fromUtf8("μUSC");
-    case sUSC: return QString::fromUtf8("Satoshi");
+    case sUSC: return QString::fromUtf8("Shadowshi");
     default: return QString("???");
     }
 }
@@ -51,7 +51,7 @@ QString BitcoinUnits::description(int unit)
     case USC:  return QString("UltimateSecureCashs");
     case mUSC: return QString("Milli-UltimateSecureCashs (1 / 1,000)");
     case uUSC: return QString("Micro-UltimateSecureCashs (1 / 1,000,000)");
-    case sUSC: return QString("Satoshi (1 / 100,000,000)");
+    case sUSC: return QString("Shadowshi (1 / 100,000,000)");
     default:   return QString("???");
     }
 }

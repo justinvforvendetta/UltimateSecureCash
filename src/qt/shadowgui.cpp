@@ -6,8 +6,6 @@
 #include "transactiontablemodel.h"
 #include "transactionrecord.h"
 
-#include "signverifymessagedialog.h"
-
 #include "aboutdialog.h"
 #include "clientmodel.h"
 #include "walletmodel.h"
@@ -21,6 +19,7 @@
 #include "guiutil.h"
 #include "wallet.h"
 #include "util.h"
+#include "init.h"
 
 #ifdef Q_OS_MAC
 #include "macdockiconhandler.h"
@@ -35,6 +34,7 @@
 #include <QMenu>
 #include <QVBoxLayout>
 #include <QIcon>
+#include <QTimer>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
@@ -51,10 +51,10 @@
 #include <QTextStream>
 #include <QTextDocument>
 
+
 #include <iostream>
 
 extern CWallet* pwalletMain;
-extern int64_t nLastCoinStakeSearchInterval;
 double GetPoSKernelPS();
 
 ShadowGUI::ShadowGUI(QWidget *parent):
@@ -86,7 +86,7 @@ ShadowGUI::ShadowGUI(QWidget *parent):
     setCentralWidget(webView);
 
     resize(1280, 720);
-    setWindowTitle(tr("Ultimate Secure Cash") + " - " + tr("Client"));
+    setWindowTitle(tr("USC") + " - " + tr("Client"));
 #ifndef Q_OS_MAC
     qApp->setWindowIcon(QIcon(":icons/shadow"));
     setWindowIcon(QIcon(":icons/shadow"));
@@ -107,11 +107,12 @@ ShadowGUI::ShadowGUI(QWidget *parent):
     // Create the tray icon (or setup the dock icon)
     createTrayIcon();
 
-    signVerifyMessageDialog = new SignVerifyMessageDialog(this);
-
     rpcConsole = new RPCConsole(this);
 
     connect(openRPCConsoleAction, SIGNAL(triggered()), rpcConsole, SLOT(show()));
+
+    // prevents an oben debug window from becoming stuck/unusable on client shutdown
+    connect(quitAction, SIGNAL(triggered()), rpcConsole, SLOT(hide()));
 
     documentFrame = webView->page()->mainFrame();
 
@@ -155,11 +156,13 @@ void ShadowGUI::pageLoaded(bool ok)
         timerStakingIcon->start(15 * 1000);
         updateStakingIcon();
     }
+
 }
 
 void ShadowGUI::addJavascriptObjects()
 {
     documentFrame->addToJavaScriptWindowObject("bridge", bridge);
+
 }
 
 void ShadowGUI::urlClicked(const QUrl & link)
@@ -177,7 +180,7 @@ void ShadowGUI::createActions()
     quitAction->setToolTip(tr("Quit application"));
     quitAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q));
     quitAction->setMenuRole(QAction::QuitRole);
-    aboutAction = new QAction(QIcon(":/icons/bitcoin"), tr("&About UltimateSecureCash"), this);
+    aboutAction = new QAction(QIcon(":/icons/shadow"), tr("&About UltimateSecureCash"), this);
     aboutAction->setToolTip(tr("Show information about UltimateSecureCash"));
     aboutAction->setMenuRole(QAction::AboutRole);
     aboutQtAction = new QAction(QIcon(":/trolltech/qmessagebox/images/qtlogo-64.png"), tr("About &Qt"), this);
@@ -186,7 +189,7 @@ void ShadowGUI::createActions()
     optionsAction = new QAction(QIcon(":/icons/options"), tr("&Options..."), this);
     optionsAction->setToolTip(tr("Modify configuration options for UltimateSecureCash"));
     optionsAction->setMenuRole(QAction::PreferencesRole);
-    toggleHideAction = new QAction(QIcon(":/icons/bitcoin"), tr("&Show / Hide"), this);
+    toggleHideAction = new QAction(QIcon(":/icons/shadow"), tr("&Show / Hide"), this);
     encryptWalletAction = new QAction(QIcon(":/icons/lock_closed"), tr("&Encrypt Wallet..."), this);
     encryptWalletAction->setToolTip(tr("Encrypt or decrypt wallet"));
     encryptWalletAction->setCheckable(true);
@@ -198,8 +201,6 @@ void ShadowGUI::createActions()
     unlockWalletAction->setToolTip(tr("Unlock wallet"));
     lockWalletAction = new QAction(QIcon(":/icons/lock_closed"), tr("&Lock Wallet"), this);
     lockWalletAction->setToolTip(tr("Lock wallet"));
-    signMessageAction = new QAction(QIcon(":/icons/edit"), tr("Sign &message..."), this);
-    verifyMessageAction = new QAction(QIcon(":/icons/transaction_0"), tr("&Verify message..."), this);
 
     //exportAction = new QAction(QIcon(":/icons/export"), tr("&Export..."), this);
     //exportAction->setToolTip(tr("Export the data in the current tab to a file"));
@@ -216,8 +217,6 @@ void ShadowGUI::createActions()
     connect(changePassphraseAction, SIGNAL(triggered()), SLOT(changePassphrase()));
     connect(unlockWalletAction, SIGNAL(triggered()), SLOT(unlockWallet()));
     connect(lockWalletAction, SIGNAL(triggered()), SLOT(lockWallet()));
-    connect(signMessageAction, SIGNAL(triggered()), SLOT(gotoSignMessageTab()));
-    connect(verifyMessageAction, SIGNAL(triggered()), SLOT(gotoVerifyMessageTab()));
 }
 
 void ShadowGUI::createMenuBar()
@@ -235,8 +234,6 @@ void ShadowGUI::createMenuBar()
     QMenu *file = appMenuBar->addMenu(tr("&File"));
     file->addAction(backupWalletAction);
     //file->addAction(exportAction);
-    file->addAction(signMessageAction);
-    file->addAction(verifyMessageAction);
     file->addSeparator();
     file->addAction(quitAction);
 
@@ -267,7 +264,7 @@ void ShadowGUI::setClientModel(ClientModel *clientModel)
             if (sMode.length() > 0)
                 sMode[0] = sMode[0].toUpper();
 
-            setWindowTitle(tr("UltimateSecureCash") + " - " + tr("Wallet") + ", " + sMode);
+            setWindowTitle(tr("USC") + " - " + tr("Wallet") + ", " + sMode);
         };
 
         // Replace some strings and icons, when using the testnet
@@ -282,7 +279,7 @@ void ShadowGUI::setClientModel(ClientModel *clientModel)
 #endif
             if(trayIcon)
             {
-                trayIcon->setToolTip(tr("UltimateSecureCash client") + QString(" ") + tr("[testnet]"));
+                trayIcon->setToolTip(tr("USC client") + QString(" ") + tr("[testnet]"));
                 trayIcon->setIcon(QIcon(":/icons/shadow_testnet"));
                 toggleHideAction->setIcon(QIcon(":/icons/toolbar_testnet"));
             }
@@ -309,8 +306,6 @@ void ShadowGUI::setWalletModel(WalletModel *walletModel)
     {
         // Report errors from wallet thread
         connect(walletModel, SIGNAL(error(QString,QString,bool)), this, SLOT(error(QString,QString,bool)));
-
-        signVerifyMessageDialog->setModel(walletModel);
 
         documentFrame->addToJavaScriptWindowObject("walletModel",  walletModel);
         documentFrame->addToJavaScriptWindowObject("optionsModel", walletModel->getOptionsModel());
@@ -358,7 +353,7 @@ void ShadowGUI::createTrayIcon()
     trayIcon = new QSystemTrayIcon(this);
     trayIconMenu = new QMenu(this);
     trayIcon->setContextMenu(trayIconMenu);
-    trayIcon->setToolTip(tr("Shadow client"));
+    trayIcon->setToolTip(tr("USC client"));
     trayIcon->setIcon(QIcon(":/icons/shadow"));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
           this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
@@ -373,8 +368,6 @@ void ShadowGUI::createTrayIcon()
     // Configuration of the tray icon (or dock icon) icon menu
     trayIconMenu->addAction(toggleHideAction);
     trayIconMenu->addSeparator();
-    trayIconMenu->addAction(signMessageAction);
-    trayIconMenu->addAction(verifyMessageAction);
     trayIconMenu->addSeparator();
     trayIconMenu->addAction(optionsAction);
     trayIconMenu->addAction(openRPCConsoleAction);
@@ -408,19 +401,22 @@ void ShadowGUI::setNumConnections(int count)
 {
     QWebElement connectionsIcon = documentFrame->findFirstElement("#connectionsIcon");
 
-    QString icon;
+    QString className;
+
     switch(count)
     {
-    case 0:          icon = "qrc:///icons/connect_0"; break;
-    case 1: case 2:  icon = "qrc:///icons/connect_1"; break;
-    case 3: case 4:  icon = "qrc:///icons/connect_2"; break;
-    case 5: case 6:  icon = "qrc:///icons/connect_3"; break;
-    case 7: case 8:  icon = "qrc:///icons/connect_4"; break;
-    case 9: case 10: icon = "qrc:///icons/connect_5"; break;
-    default:         icon = "qrc:///icons/connect_6"; break;
+    case 0:          className = "connect-0"; break;
+    case 1: case 2:  className = "connect-1"; break;
+    case 3: case 4:  className = "connect-2"; break;
+    case 5: case 6:  className = "connect-3"; break;
+    case 7: case 8:  className = "connect-4"; break;
+    case 9: case 10: className = "connect-5"; break;
+    default:         className = "connect-6"; break;
     }
-    connectionsIcon.setAttribute("src", icon);
-    connectionsIcon.setAttribute("title", tr("%n active connection(s) to UltimateSecureCash network", "", count));
+
+    connectionsIcon.setAttribute("class", className);
+    connectionsIcon.setAttribute("src", "qrc:///icons/" + className.replace("-", "_"));
+    connectionsIcon.setAttribute("data-title", tr("%n active connection(s) to UltimateSecureCash network", "", count));
 }
 
 void ShadowGUI::setNumBlocks(int count, int nTotalBlocks)
@@ -430,7 +426,7 @@ void ShadowGUI::setNumBlocks(int count, int nTotalBlocks)
     QWebElement syncProgressBar = documentFrame->findFirstElement("#syncProgressBar");
 
     // don't show / hide progress bar and its label if we have no connection to the network
-    if (!clientModel || clientModel->getNumConnections() == 0)
+    if (!clientModel || (clientModel->getNumConnections() == 0 && !clientModel->isImporting()))
     {
         syncProgressBar.setAttribute("style", "display:none;");
 
@@ -469,7 +465,7 @@ void ShadowGUI::setNumBlocks(int count, int nTotalBlocks)
         if (strStatusBarWarnings.isEmpty())
         {
             bridge->networkAlert("");
-            tooltip = tr("Synchronizing with network...");
+            tooltip = clientModel->isImporting() ? tr("Importing blocks...") : tr("Synchronizing with network...");
 
             if (nNodeMode == NT_FULL)
             {
@@ -487,11 +483,11 @@ void ShadowGUI::setNumBlocks(int count, int nTotalBlocks)
         }
 
         tooltip += (tooltip.isEmpty()? "" : "\n")
-                 + tr("Downloaded %1 of %2 %3 of transaction history (%4% done).").arg(count).arg(nTotalBlocks).arg(sBlockTypeMulti).arg(nPercentageDone, 0, 'f', 2);
-    }
-    else
+		 + (clientModel->isImporting() ? tr("Imported") : tr("Downloaded")) + " "
+                 + tr("%1 of %2 %3 of transaction history (%4% done).").arg(count).arg(nTotalBlocks).arg(sBlockTypeMulti).arg(nPercentageDone, 0, 'f', 2);
+    } else
     {
-        tooltip = tr("Downloaded %1 blocks of transaction history.").arg(count);
+        tooltip = (clientModel->isImporting() ? tr("Imported") : tr("Downloaded")) + " " + tr("%1 blocks of transaction history.").arg(count);
     }
 
     // Override progressBarLabel text when we have warnings to display
@@ -542,8 +538,7 @@ void ShadowGUI::setNumBlocks(int count, int nTotalBlocks)
             outOfSync.setStyleProperty("display", "none");
 
         syncProgressBar.setAttribute("style", "display:none;");
-    }
-    else
+    } else
     {
         tooltip = tr("Catching up...") + "\n" + tooltip;
 
@@ -564,9 +559,9 @@ void ShadowGUI::setNumBlocks(int count, int nTotalBlocks)
         tooltip += tr("Last received %1 was generated %2.").arg(sBlockType).arg(text);
     };
 
-    blocksIcon     .setAttribute("title", tooltip);
-    syncingIcon    .setAttribute("title", tooltip);
-    syncProgressBar.setAttribute("title", tooltip);
+    blocksIcon     .setAttribute("data-title", tooltip);
+    syncingIcon    .setAttribute("data-title", tooltip);
+    syncProgressBar.setAttribute("data-title", tooltip);
     syncProgressBar.setAttribute("value", QString::number(count));
     syncProgressBar.setAttribute("max",   QString::number(nTotalBlocks));
 }
@@ -577,7 +572,8 @@ void ShadowGUI::error(const QString &title, const QString &message, bool modal)
     if(modal)
     {
         QMessageBox::critical(this, title, message, QMessageBox::Ok, QMessageBox::Ok);
-    } else {
+    } else
+    {
         notificator->notify(Notificator::Critical, title, message);
     }
 }
@@ -631,7 +627,7 @@ void ShadowGUI::askFee(qint64 nFeeRequired, bool *payFee)
 
 void ShadowGUI::incomingTransaction(const QModelIndex & parent, int start, int end)
 {
-    if(!walletModel || !clientModel || clientModel->inInitialBlockDownload() || !nNodeState == NS_READY)
+    if(!walletModel || !clientModel || clientModel->inInitialBlockDownload() || nNodeState != NS_READY)
         return;
 
     TransactionTableModel *ttm = walletModel->getTransactionTableModel();
@@ -695,24 +691,6 @@ void ShadowGUI::incomingMessage(const QModelIndex & parent, int start, int end)
                               .arg(to_address)
                               .arg(messageText));
     };
-}
-
-void ShadowGUI::gotoSignMessageTab(QString addr)
-{
-    // call show() in showTab_SM()
-    signVerifyMessageDialog->showTab_SM(true);
-
-    if(!addr.isEmpty())
-        signVerifyMessageDialog->setAddress_SM(addr);
-}
-
-void ShadowGUI::gotoVerifyMessageTab(QString addr)
-{
-    // call show() in showTab_VM()
-    signVerifyMessageDialog->showTab_VM(true);
-
-    if(!addr.isEmpty())
-        signVerifyMessageDialog->setAddress_VM(addr);
 }
 
 void ShadowGUI::optionsClicked()
@@ -779,6 +757,7 @@ void ShadowGUI::setEncryptionStatus(int status)
 {
     QWebElement encryptionIcon    = documentFrame->findFirstElement("#encryptionIcon");
     QWebElement encryptButton     = documentFrame->findFirstElement("#encryptWallet");
+    QWebElement encryptMenuItem   = documentFrame->findFirstElement(".encryptWallet");
     QWebElement changePassphrase  = documentFrame->findFirstElement("#changePassphrase");
     QWebElement toggleLock        = documentFrame->findFirstElement("#toggleLock");
     QWebElement toggleLockIcon    = documentFrame->findFirstElement("#toggleLock i");
@@ -788,6 +767,7 @@ void ShadowGUI::setEncryptionStatus(int status)
         encryptionIcon.setAttribute("style", "display:none;");
         changePassphrase.addClass("none");
         toggleLock.addClass("none");
+        encryptMenuItem.removeClass("none");
         encryptWalletAction->setChecked(false);
         changePassphraseAction->setEnabled(false);
         unlockWalletAction->setVisible(false);
@@ -795,13 +775,50 @@ void ShadowGUI::setEncryptionStatus(int status)
         encryptWalletAction->setEnabled(true);
         break;
     case WalletModel::Unlocked:
+        encryptMenuItem  .addClass("none");
         encryptionIcon.removeAttribute("style");
         encryptionIcon.removeClass("fa-lock");
+        encryptionIcon.removeClass("encryption");
         encryptionIcon.   addClass("fa-unlock");
+        encryptionIcon.   addClass("no-encryption");
+        encryptMenuItem  .addClass("none");
         toggleLockIcon.removeClass("fa-unlock");
+        toggleLockIcon.removeClass("fa-unlock-alt");
         toggleLockIcon.   addClass("fa-lock");
         encryptionIcon   .setAttribute("src", "qrc:///icons/lock_open");
-        encryptionIcon   .setAttribute("title", tr("Wallet is <b>encrypted</b> and currently <b>unlocked</b>"));
+
+        if (fWalletUnlockStakingOnly || fWalletUnlockMessagingEnabled)
+        {
+            QString datatitle = "";
+
+            if(fWalletUnlockStakingOnly && fWalletUnlockMessagingEnabled)
+                datatitle.append(tr("Wallet is <b>encrypted</b> and currently <b>unlocked</b> for staking and messaging only."));
+
+            else if(fWalletUnlockMessagingEnabled)
+                datatitle.append(tr("Wallet is <b>encrypted</b> and currently <b>unlocked</b> for messaging only."));
+
+            else if(fWalletUnlockStakingOnly)
+                datatitle.append(tr("Wallet is <b>encrypted</b> and currently <b>unlocked</b> for staking only."));
+
+
+            encryptionIcon   .setAttribute("data-title", datatitle);
+            encryptionIcon.removeClass("red");
+            encryptionIcon.addClass("orange");
+            encryptionIcon.addClass("encryption-stake");
+
+            toggleLockIcon  .removeClass("red");
+            toggleLockIcon     .addClass("orange");
+        } else
+        {
+            encryptionIcon   .setAttribute("data-title", tr("Wallet is <b>encrypted</b> and currently <b>unlocked</b>"));
+            encryptionIcon.addClass("red");
+            encryptionIcon.removeClass("orange");
+            encryptionIcon.removeClass("encryption-stake");
+
+            toggleLockIcon  .removeClass("orange");
+            toggleLockIcon     .addClass("red");
+        };
+
         encryptButton.addClass("none");
         changePassphrase.removeClass("none");
         toggleLock.removeClass("none");
@@ -814,13 +831,21 @@ void ShadowGUI::setEncryptionStatus(int status)
     case WalletModel::Locked:
         encryptionIcon.removeAttribute("style");
         encryptionIcon.removeClass("fa-unlock");
+        encryptionIcon.removeClass("no-encryption");
+        encryptionIcon.removeClass("encryption-stake");
         encryptionIcon.   addClass("fa-lock");
+        encryptionIcon.   addClass("encryption");
         toggleLockIcon.removeClass("fa-lock");
-        toggleLockIcon.   addClass("fa-unlock");
-        encryptionIcon   .setAttribute("title", tr("Wallet is <b>encrypted</b> and currently <b>locked</b>"));
-        encryptButton.addClass("none");
+        toggleLockIcon.   addClass("fa-unlock-alt");
+        encryptionIcon   .setAttribute("data-title", tr("Wallet is <b>encrypted</b> and currently <b>locked</b>"));
+
+        encryptionIcon     .addClass("red");
+        encryptionIcon  .removeClass("orange");
+        encryptButton      .addClass("none");
+        encryptMenuItem    .addClass("none");
         changePassphrase.removeClass("none");
-        toggleLock.removeClass("none");
+        toggleLockIcon  .removeClass("orange");
+        toggleLockIcon     .addClass("red");
         encryptWalletAction->setChecked(true);
         changePassphraseAction->setEnabled(true);
         unlockWalletAction->setVisible(true);
@@ -846,8 +871,10 @@ void ShadowGUI::backupWallet()
 {
     QString saveDir = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
     QString filename = QFileDialog::getSaveFileName(this, tr("Backup Wallet"), saveDir, tr("Wallet Data (*.dat)"));
-    if(!filename.isEmpty()) {
-        if(!walletModel->backupWallet(filename)) {
+    if(!filename.isEmpty())
+    {
+        if(!walletModel->backupWallet(filename))
+        {
             QMessageBox::warning(this, tr("Backup Failed"), tr("There was an error trying to save the wallet data to the new location."));
         }
     }
@@ -864,11 +891,11 @@ void ShadowGUI::unlockWallet()
 {
     if(!walletModel)
         return;
-    
+
     // Unlock wallet when requested by wallet model
     if(walletModel->getEncryptionStatus() == WalletModel::Locked)
     {
-        
+
         AskPassphraseDialog::Mode mode = sender() == unlockWalletAction ?
               AskPassphraseDialog::UnlockStaking : AskPassphraseDialog::Unlock;
         AskPassphraseDialog dlg(mode, this);
@@ -890,7 +917,7 @@ void ShadowGUI::toggleLock()
     if(!walletModel)
         return;
     WalletModel::EncryptionStatus status = walletModel->getEncryptionStatus();
-    
+
     switch(status)
     {
         case WalletModel::Locked:       unlockWalletAction->trigger(); break;
@@ -901,7 +928,7 @@ void ShadowGUI::toggleLock()
                 QMessageBox::Ok, QMessageBox::Ok);
             break;
     };
-    
+
 }
 
 void ShadowGUI::showNormalIfMinimized(bool fToggleHidden)
@@ -944,22 +971,26 @@ void ShadowGUI::updateWeight()
     if (!lockWallet)
         return;
 
-    uint64_t nMinWeight = 0, nMaxWeight = 0;
-    pwalletMain->GetStakeWeight(*pwalletMain, nMinWeight, nMaxWeight, nWeight);
+    nWeight = pwalletMain->GetStakeWeight();
 }
 
 void ShadowGUI::updateStakingIcon()
 {
-
     QWebElement stakingIcon = documentFrame->findFirstElement("#stakingIcon");
+    uint64_t nNetworkWeight = 0;
 
-    updateWeight();
-
-    if (nLastCoinStakeSearchInterval && nWeight)
+    if(fIsStaking)
     {
-        uint64_t nNetworkWeight = GetPoSKernelPS();
-        unsigned nEstimateTime = nTargetSpacing * nNetworkWeight / nWeight;
+        updateWeight();
+        nNetworkWeight = GetPoSKernelPS();
+    } else
+        nWeight = 0;
 
+    if (fIsStaking && nWeight)
+    {
+        uint64_t nWeight = this->nWeight;
+
+        unsigned nEstimateTime = GetTargetSpacing(nBestHeight) * nNetworkWeight / nWeight;
         QString text;
 
         text = (nEstimateTime < 60)           ? tr("%n second(s)", "", nEstimateTime) : \
@@ -971,19 +1002,28 @@ void ShadowGUI::updateStakingIcon()
         stakingIcon.   addClass("staking");
         //stakingIcon.   addClass("fa-spin"); // TODO: Replace with gif... too much cpu usage
 
-        stakingIcon.setAttribute("title", tr("Staking.\nYour weight is %1\nNetwork weight is %2\nExpected time to earn reward is %3").arg(nWeight).arg(nNetworkWeight).arg(text));
-    }
-    else
+        nWeight        /= COIN,
+        nNetworkWeight /= COIN;
+
+        stakingIcon.setAttribute("data-title", tr("Staking.\nYour weight is %1\nNetwork weight is %2\nExpected time to earn reward is %3").arg(nWeight).arg(nNetworkWeight).arg(text));
+    } else
     {
         stakingIcon.   addClass("not-staking");
         stakingIcon.removeClass("staking");
         //stakingIcon.removeClass("fa-spin"); // TODO: See above TODO...
 
-        stakingIcon.setAttribute("title", (nNodeMode == NT_THIN)                   ? tr("Not staking because wallet is in thin mode") : \
-                                          (pwalletMain && pwalletMain->IsLocked()) ? tr("Not staking because wallet is locked")  : \
-                                          (vNodes.empty())                         ? tr("Not staking because wallet is offline") : \
-                                          (IsInitialBlockDownload())               ? tr("Not staking because wallet is syncing") : \
-                                          (!nWeight)                               ? tr("Not staking because you don't have mature coins") : \
-                                                                                     tr("Not staking"));
+        stakingIcon.setAttribute("data-title", (nNodeMode == NT_THIN)                   ? tr("Not staking because wallet is in thin mode") : \
+                                               (!GetBoolArg("-staking", true))          ? tr("Not staking, staking is disabled")  : \
+                                               (pwalletMain && pwalletMain->IsLocked()) ? tr("Not staking because wallet is locked")  : \
+                                               (vNodes.empty())                         ? tr("Not staking because wallet is offline") : \
+                                               (IsInitialBlockDownload())               ? tr("Not staking because wallet is syncing") : \
+                                               (!nWeight)                               ? tr("Not staking because you don't have mature coins") : \
+                                                                                          tr("Not staking"));
     }
+}
+
+void ShadowGUI::detectShutdown()
+{
+    if (ShutdownRequested())
+        QMetaObject::invokeMethod(QCoreApplication::instance(), "quit", Qt::QueuedConnection);
 }
