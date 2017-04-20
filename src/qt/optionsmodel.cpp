@@ -5,6 +5,7 @@
 #include "init.h"
 #include "walletdb.h"
 #include "guiutil.h"
+#include "ringsig.h"
 
 OptionsModel::OptionsModel(QObject *parent) :
     QAbstractListModel(parent)
@@ -16,21 +17,18 @@ bool static ApplyProxySettings()
 {
     QSettings settings;
     CService addrProxy(settings.value("addrProxy", "127.0.0.1:9050").toString().toStdString());
-    int nSocksVersion(settings.value("nSocksVersion", 5).toInt());
+
     if (!settings.value("fUseProxy", false).toBool()) {
         addrProxy = CService();
-        nSocksVersion = 0;
         return false;
     }
-    if (nSocksVersion && !addrProxy.IsValid())
+    if (!addrProxy.IsValid())
         return false;
     if (!IsLimited(NET_IPV4))
-        SetProxy(NET_IPV4, addrProxy, nSocksVersion);
-    if (nSocksVersion > 4) {
-        if (!IsLimited(NET_IPV6))
-            SetProxy(NET_IPV6, addrProxy, nSocksVersion);
-        SetNameProxy(addrProxy, nSocksVersion);
-    }
+    SetProxy(NET_IPV4, addrProxy);
+    if (!IsLimited(NET_IPV6))
+        SetProxy(NET_IPV6, addrProxy);
+    SetNameProxy(addrProxy);
     return true;
 }
 
@@ -51,8 +49,8 @@ void OptionsModel::Init()
     visibleTransactions = settings.value("visibleTransactions", "*").toStringList();
     fAutoRingSize = settings.value("fAutoRingSize", false).toBool();
     fAutoRedeemShadow = settings.value("fAutoRedeemShadow", false).toBool();
-    nMinRingSize = settings.value("nMinRingSize", 3).toInt();
-    nMaxRingSize = settings.value("nMaxRingSize", 200).toInt();
+    nMinRingSize = settings.value("nMinRingSize", MIN_RING_SIZE).toInt();
+    nMaxRingSize = settings.value("nMaxRingSize", MAX_RING_SIZE).toInt();
 
     // These are shared with core Bitcoin; we want
     // command-line options to override the GUI settings:
@@ -74,8 +72,6 @@ void OptionsModel::Init()
         SoftSetBoolArg("-nosmsg", !settings.value("fSecMsgEnabled").toBool());
     if (settings.contains("fThinMode"))
         SoftSetBoolArg("-thinmode", settings.value("fThinMode").toBool());
-    if (settings.contains("fThinStake"))
-        SoftSetBoolArg("-thinstake", settings.value("fThinStake").toBool());
     if (settings.contains("fThinFullIndex"))
         SoftSetBoolArg("-thinfullindex", settings.value("fThinFullIndex").toBool());
     if (settings.contains("nThinIndexWindow"))
@@ -107,14 +103,14 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
         case ProxyIP: {
             proxyType proxy;
             if (GetProxy(NET_IPV4, proxy))
-                return QString::fromStdString(proxy.first.ToStringIP());
+                return QString::fromStdString(proxy.ToStringIP());
             else
                 return "";
         }
         case ProxyPort: {
             proxyType proxy;
             if (GetProxy(NET_IPV4, proxy))
-                return QVariant(proxy.first.GetPort());
+                return QVariant(proxy.GetPort());
         }
             break;
 
@@ -150,10 +146,8 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
             return fSecMsgEnabled;
         case ThinMode:
             return settings.value("fThinMode",      GetBoolArg("-thinmode",      false)).toBool();
-        case ThinStake:
-            return settings.value("fThinStake",     GetBoolArg("-thinstake",     false)).toBool();
         case ThinFullIndex:
-            return settings.value("fThinFullIndex", GetBoolArg("-thinfullindex", GetBoolArg("-thinstake", false))).toBool();
+            return settings.value("fThinFullIndex", GetBoolArg("-thinfullindex", false)).toBool();
         case ThinIndexWindow:
             return settings.value("ThinIndexWindow", (qint64) GetArg("-thinindexwindow", 4096)).toInt();
         case Notifications:
@@ -178,7 +172,6 @@ QString OptionsModel::optionIDName(int row)
     case MinStakeInterval: return "MinStakeInterval";
     case SecureMessaging: return "SecureMessaging";
     case ThinMode: return "ThinMode";
-    case ThinStake: return "ThinStake";
     case ThinFullIndex: return "ThinFullIndex";
     case ThinIndexWindow: return "ThinIndexWindow";
     case AutoRingSize: return "AutoRingSize";
@@ -229,8 +222,8 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
             break;
         case MapPortUPnP:
             fUseUPnP = value.toBool();
-            settings.setValue("fUseUPnP", fUseUPnP);
-            MapPort();
+            settings.setValue("fUseUPnP", value.toBool());
+            MapPort(value.toBool());
             break;
         case MinimizeOnClose:
             fMinimizeOnClose = value.toBool();
@@ -242,32 +235,22 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
             break;
         case ProxyIP: {
             proxyType proxy;
-            proxy.first = CService("127.0.0.1", 9050);
+            proxy = CService("127.0.0.1", 9050);
             GetProxy(NET_IPV4, proxy);
 
             CNetAddr addr(value.toString().toStdString());
-            proxy.first.SetIP(addr);
-            settings.setValue("addrProxy", proxy.first.ToStringIPPort().c_str());
+            proxy.SetIP(addr);
+            settings.setValue("addrProxy", proxy.ToStringIPPort().c_str());
             successful = ApplyProxySettings();
         }
         break;
         case ProxyPort: {
             proxyType proxy;
-            proxy.first = CService("127.0.0.1", 9050);
+            proxy = CService("127.0.0.1", 9050);
             GetProxy(NET_IPV4, proxy);
 
-            proxy.first.SetPort(value.toInt());
-            settings.setValue("addrProxy", proxy.first.ToStringIPPort().c_str());
-            successful = ApplyProxySettings();
-        }
-        break;
-        case ProxySocksVersion: {
-            proxyType proxy;
-            proxy.second = 5;
-            GetProxy(NET_IPV4, proxy);
-
-            proxy.second = value.toInt();
-            settings.setValue("nSocksVersion", proxy.second);
+            proxy.SetPort(value.toInt());
+            settings.setValue("addrProxy", proxy.ToStringIPPort().c_str());
             successful = ApplyProxySettings();
         }
         break;
@@ -346,9 +329,6 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
             break;
         case ThinMode:
             settings.setValue("fThinMode", value.toBool());
-            break;
-        case ThinStake:
-            settings.setValue("fThinStake", value.toBool());
             break;
         case ThinFullIndex:
             settings.setValue("fThinFullIndex", value.toBool());

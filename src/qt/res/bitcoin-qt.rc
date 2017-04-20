@@ -1,4 +1,4 @@
-IDI_ICON1 ICON DISCARDABLE "icons/ultimatesecurecash.ico"
+IDI_ICON1 ICON DISCARDABLE "icons/shadowcoin.ico"
 
 #include <windows.h>             // needed for VERSIONINFO
 #include "../../clientversion.h" // holds the needed client version information
@@ -18,11 +18,11 @@ BEGIN
     BEGIN
         BLOCK "040904E4" // U.S. English - multilingual (hex)
         BEGIN
-            VALUE "CompanyName",        "UltimateSecureCash"
-            VALUE "FileDescription",    "Shadow (OSS GUI client for UltimateSecureCash)"
+            VALUE "CompanyName",        "ShadowCoin"
+            VALUE "FileDescription",    "Shadow (OSS GUI client for ShadowCoin)"
             VALUE "FileVersion",        VER_FILEVERSION_STR
             VALUE "InternalName",       "shadow"
-            VALUE "LegalCopyright",     "2009-2014 The Bitcoin developers, 2012-2014 The NovaCoin & PPCoin developers, 2014 The BlackCoin developers, 2014 The UltimateSecureCash developers"
+            VALUE "LegalCopyright",     "2009-2014 The Bitcoin developers, 2012-2014 The NovaCoin & PPCoin developers, 2014 The BlackCoin developers, 2014-2015 The ShadowCoin developers"
             VALUE "LegalTrademarks1",   "Distributed under the MIT/X11 software license, see the accompanying file COPYING or http://www.opensource.org/licenses/mit-license.php."
             VALUE "OriginalFilename",   "shadow.exe"
             VALUE "ProductName",        "Shadow"

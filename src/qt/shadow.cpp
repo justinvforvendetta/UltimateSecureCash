@@ -9,10 +9,10 @@
 #include "messagemodel.h"
 #include "guiutil.h"
 #include "guiconstants.h"
+#include "paymentserver.h"
 
 #include "init.h"
 #include "ui_interface.h"
-#include "qtipcserver.h"
 
 #include <QApplication>
 #include <QMessageBox>
@@ -21,6 +21,7 @@
 #include <QTranslator>
 #include <QSplashScreen>
 #include <QLibraryInfo>
+#include <QTimer>
 
 #if defined(SHADOW_NEED_QT_PLUGINS) && !defined(_SHADOW_QT_PLUGINS_INCLUDED)
 #define _SHADOW_NEED_QT_PLUGINS
@@ -51,7 +52,7 @@ static void ThreadSafeMessageBox(const std::string& message, const std::string& 
                                    Q_ARG(bool, modal));
     } else
     {
-        printf("%s: %s\n", caption.c_str(), message.c_str());
+        LogPrintf("%s: %s\n", caption.c_str(), message.c_str());
         fprintf(stderr, "%s: %s\n", caption.c_str(), message.c_str());
     }
 }
@@ -114,8 +115,7 @@ static void handleRunawayException(std::exception *e)
 #ifndef SHADOW_QT_TEST
 int main(int argc, char *argv[])
 {
-    // Do this early as we don't want to bother initializing if we are just calling IPC
-    ipcScanRelay(argc, argv);
+    fHaveGUI = true;
 
 #if QT_VERSION < 0x050000
     // Internal string conversion is all UTF-8
@@ -124,15 +124,22 @@ int main(int argc, char *argv[])
 #endif
 
     Q_INIT_RESOURCE(shadow);
-    QApplication app(argc, argv);
-
-    // Install global event filter that makes sure that long tooltips can be word-wrapped
-    app.installEventFilter(new GUIUtil::ToolTipToRichTextFilter(TOOLTIP_WRAP_THRESHOLD, &app));
 
     // Command-line options take precedence:
     ParseParameters(argc, argv);
 
-    // ... then ultimatesecurecash.conf:
+    QApplication app(argc, argv);
+    
+    // Do this early as we don't want to bother initializing if we are just calling IPC
+    // ... but do it after creating app, so QCoreApplication::arguments is initialized:
+    if (PaymentServer::ipcSendCommandLine())
+        exit(0);
+    PaymentServer* paymentServer = new PaymentServer(&app);
+
+    // Install global event filter that makes sure that long tooltips can be word-wrapped
+    app.installEventFilter(new GUIUtil::ToolTipToRichTextFilter(TOOLTIP_WRAP_THRESHOLD, &app));
+
+    // ... then shadowcoin.conf:
     if (!boost::filesystem::is_directory(GetDataDir(false)))
     {
         // This message can not be translated, as translation is not initialized yet
@@ -145,12 +152,12 @@ int main(int argc, char *argv[])
 
     // Application identification (must be set before OptionsModel is initialized,
     // as it is used to locate QSettings)
-    app.setOrganizationName("The Shadow Project");
-    app.setOrganizationDomain("shadow.cash");
+    app.setOrganizationName("UltimateSecureCash");
+    app.setOrganizationDomain("ultimatesecurecash");
     if(GetBoolArg("-testnet")) // Separate UI settings for testnet
-        app.setApplicationName("Shadow-testnet");
+        app.setApplicationName("USC-testnet");
     else
-        app.setApplicationName("Shadow");
+        app.setApplicationName("USC");
 
     // ... then GUI settings:
     OptionsModel optionsModel;
@@ -187,12 +194,13 @@ int main(int argc, char *argv[])
     uiInterface.ThreadSafeAskFee.connect(ThreadSafeAskFee);
     uiInterface.ThreadSafeHandleURI.connect(ThreadSafeHandleURI);
     uiInterface.InitMessage.connect(InitMessage);
-    uiInterface.QueueShutdown.connect(QueueShutdown);
+    //uiInterface.QueueShutdown.connect(QueueShutdown);
     uiInterface.Translate.connect(Translate);
 
     // Show help message immediately after parsing command-line options (for "-lang") and setting locale,
     // but before showing splash screen.
-    if (mapArgs.count("-?") || mapArgs.count("--help"))
+
+    if (mapArgs.count("-?") || mapArgs.count("-h") || mapArgs.count("-help"))
     {
         GUIUtil::HelpMessageBox help;
         help.showOrPrint();
@@ -215,15 +223,24 @@ int main(int argc, char *argv[])
         // Regenerate startup link, to fix links to old versions
         if (GUIUtil::GetStartOnSystemStartup())
             GUIUtil::SetStartOnSystemStartup(true);
-
+        
+        boost::thread_group threadGroup;
+        
         ShadowGUI window;
         guiref = &window;
+        
+        QTimer* pollShutdownTimer = new QTimer(guiref);
+        QObject::connect(pollShutdownTimer, SIGNAL(timeout()), guiref, SLOT(detectShutdown()));
+        pollShutdownTimer->start(200);
 
-        if(AppInit2())
+        if (AppInit2(threadGroup))
         {
             {
                 // Put this in a block, so that the Model objects are cleaned up before
                 // calling Shutdown().
+                
+                paymentServer->setOptionsModel(&optionsModel);
+                
                 if (splashref)
                     splash.finish(&window);
 
@@ -243,9 +260,11 @@ int main(int argc, char *argv[])
                 {
                     window.show();
                 }
-
-                // Place this here as guiref has to be defined if we don't want to lose URIs
-                ipcInit(argc, argv);
+                
+                // Now that initialization/startup is done, process any command-line
+                // shadow: URIs
+                QObject::connect(paymentServer, SIGNAL(receivedURI(QString)), &window, SLOT(handleURI(QString)));
+                QTimer::singleShot(100, paymentServer, SLOT(uiReady()));
 
                 app.exec();
 
@@ -255,12 +274,18 @@ int main(int argc, char *argv[])
                 window.setMessageModel(0);
                 guiref = 0;
             }
-            // Shutdown the core and its threads, but don't exit Bitcoin-Qt here
-            Shutdown(NULL);
+            // Shutdown the core and its threads, but don't exit Qt here
+            LogPrintf("UltimateSecureCash shutdown.\n\n");
+            threadGroup.interrupt_all();
+            threadGroup.join_all();
+            Shutdown();
         } else
         {
+            threadGroup.interrupt_all();
+            threadGroup.join_all();
+            Shutdown();
             return 1;
-        }
+        };
     } catch (std::exception& e) {
         handleRunawayException(&e);
     } catch (...) {

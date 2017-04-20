@@ -22,7 +22,6 @@ class TransactionTableModel;
 class ClientModel;
 class WalletModel;
 class MessageModel;
-class SignVerifyMessageDialog;
 class Notificator;
 
 QT_BEGIN_NAMESPACE
@@ -69,18 +68,13 @@ private:
     QWebView *webView;
     QWebFrame *documentFrame;
 
-    ShadowBridge * bridge;
+    ShadowBridge *bridge;
 
     ClientModel *clientModel;
     WalletModel *walletModel;
     MessageModel *messageModel;
 
-    SignVerifyMessageDialog *signVerifyMessageDialog;
-
     QMenuBar *appMenuBar;
-
-    QAction *signMessageAction;
-    QAction *verifyMessageAction;
 
     QAction *quitAction;
     QAction *aboutAction;
@@ -158,11 +152,6 @@ private slots:
     */
     void incomingMessage(const QModelIndex & parent, int start, int end);
 
-    /** Show Sign/Verify Message dialog and switch to sign message tab */
-    void gotoSignMessageTab(QString addr = "");
-    /** Show Sign/Verify Message dialog and switch to verify message tab */
-    void gotoVerifyMessageTab(QString addr = "");
-
     /** Show configuration dialog */
     void optionsClicked();
     /** Show about dialog */
@@ -188,7 +177,9 @@ private slots:
 
     void updateWeight();
     void updateStakingIcon();
-
+    
+    /** called by a timer to check if fRequestShutdown has been set **/
+    void detectShutdown();
 };
 
 #endif

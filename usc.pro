@@ -1,10 +1,13 @@
 TEMPLATE = app
 TARGET = USC
-VERSION = 1.3.0.8
+VERSION = 1.5.0.3
 INCLUDEPATH += src src/json src/qt
-DEFINES += QT_GUI BOOST_THREAD_USE_LIB BOOST_SPIRIT_THREADSAFE
+DEFINES += BOOST_THREAD_USE_LIB BOOST_SPIRIT_THREADSAFE
 CONFIG += no_include_pwd
 CONFIG += thread
+
+target.path = /usr/local/bin/
+INSTALLS += target
 
 # Mobile devices
 android:ios{
@@ -29,6 +32,7 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 OBJECTS_DIR = build
 MOC_DIR = build
 UI_DIR = build
+RESOURCES = shadow.qrc
 
 android {
     INCLUDEPATH += src/qt/android
@@ -49,13 +53,12 @@ android {
 
     QT += widgets webkitwidgets
 }
-    RESOURCES = shadow.qrc
 
 build_macosx64 {
     QMAKE_TARGET_BUNDLE_PREFIX = co.ultimatesecurecash
     BOOST_LIB_SUFFIX=-mt
-    BOOST_INCLUDE_PATH=/usr/local/Cellar/boost/1.55.0_2/include
-    BOOST_LIB_PATH=/usr/local/Cellar/boost/1.55.0_2/lib
+    BOOST_INCLUDE_PATH=/usr/local/Cellar/boost/1.61.0_1/include
+    BOOST_LIB_PATH=/usr/local/Cellar/boost/1.61.0_1/lib
 
     BDB_INCLUDE_PATH=/usr/local/opt/berkeley-db4/include
     BDB_LIB_PATH=/usr/local/Cellar/berkeley-db4/4.8.30/lib
@@ -63,13 +66,16 @@ build_macosx64 {
     OPENSSL_INCLUDE_PATH=/usr/local/opt/openssl/include
     OPENSSL_LIB_PATH=/usr/local/opt/openssl/lib
 
-    MINIUPNPC_INCLUDE_PATH=/usr/local/opt/miniupnpc/include
-    MINIUPNPC_LIB_PATH=/usr/local/Cellar/miniupnpc/1.8.20131007/lib
+    #MINIUPNPC_INCLUDE_PATH=/usr/local/opt/miniupnpc/include
+    #MINIUPNPC_LIB_PATH=/usr/local/Cellar/miniupnpc/1.8.20131007/lib
+    MINIUPNPC_INCLUDE_PATH=/usr/local/Cellar/miniupnpc/2.0/include
+    MINIUPNPC_LIB_PATH=/usr/local/Cellar/miniupnpc/2.0/lib
 
-    DEFINES += IS_ARCH_64
     QMAKE_CXXFLAGS += -arch x86_64 -stdlib=libc++
     QMAKE_CFLAGS += -arch x86_64
     QMAKE_LFLAGS += -arch x86_64 -stdlib=libc++
+    USE_UPNP=1
+
 }
 build_win32 {
     BOOST_LIB_SUFFIX=-mgw48-mt-s-1_55
@@ -93,8 +99,6 @@ build_win32 {
 # use: qmake "RELEASE=1"
 contains(RELEASE, 1) {
     CONFIG += static
-    # Mac: compile for maximum compatibility (10.5, 32-bit)
-    macx:QMAKE_CXXFLAGS += -mmacosx-version-min=10.5 -arch x86_64 -isysroot /Developer/SDKs/MacOSX10.5.sdk
 
     !windows:!macx {
         # Linux: static link
@@ -102,16 +106,14 @@ contains(RELEASE, 1) {
     }
 }
 
-!win32 {
 # for extra security against potential buffer overflows: enable GCCs Stack Smashing Protection
 QMAKE_CXXFLAGS *= -fstack-protector-all --param ssp-buffer-size=1
 QMAKE_LFLAGS *= -fstack-protector-all --param ssp-buffer-size=1
 # We need to exclude this for Windows cross compile with MinGW 4.2.x, as it will result in a non-working executable!
 # This can be enabled for Windows, when we switch to MinGW >= 4.4.x.
-}
 # for extra security on Windows: enable ASLR and DEP via GCC linker flags
-win32:QMAKE_LFLAGS *= -Wl,--dynamicbase -Wl,--nxcompat
-#win32:QMAKE_LFLAGS += -static-libgcc -static-libstdc++
+win32:QMAKE_LFLAGS *= -Wl,--dynamicbase -Wl,--nxcompat -static
+win32:QMAKE_LFLAGS *= -static-libgcc -static-libstdc++
 
 # use: qmake "USE_UPNP=1" ( enabled by default; default)
 #  or: qmake "USE_UPNP=0" (disabled by default)
@@ -124,7 +126,7 @@ contains(USE_UPNP, -) {
     count(USE_UPNP, 0) {
         USE_UPNP=1
     }
-    DEFINES += USE_UPNP=$$USE_UPNP STATICLIB
+    DEFINES += USE_UPNP=$$USE_UPNP MINIUPNP_STATICLIB STATICLIB
     INCLUDEPATH += $$MINIUPNPC_INCLUDE_PATH
     LIBS += $$join(MINIUPNPC_LIB_PATH,,-L,) -lminiupnpc
     win32:LIBS += -liphlpapi
@@ -147,18 +149,21 @@ contains(SHADOW_NEED_QT_PLUGINS, 1) {
 
 INCLUDEPATH += src/leveldb/include src/leveldb/helpers
 LIBS += $$PWD/src/leveldb/libleveldb.a $$PWD/src/leveldb/libmemenv.a
-SOURCES += src/txdb-leveldb.cpp
+SOURCES += src/txdb-leveldb.cpp \
+    src/qt/addresstablemodel.cpp
 
-!win32 {
-    # we use QMAKE_CXXFLAGS_RELEASE even without RELEASE=1 because we use RELEASE to indicate linking preferences not -O preferences
-    genleveldb.commands = cd $$PWD/src/leveldb && CC=$$QMAKE_CC CXX=$$QMAKE_CXX $(MAKE) OPT=\"$$QMAKE_CXXFLAGS $$QMAKE_CXXFLAGS_RELEASE\" libleveldb.a libmemenv.a
-} else {
+win32 {
     # make an educated guess about what the ranlib command is called
     isEmpty(QMAKE_RANLIB) {
         QMAKE_RANLIB = $$replace(QMAKE_STRIP, strip, ranlib)
     }
     LIBS += -lshlwapi
     genleveldb.commands = cd $$PWD/src/leveldb && CC=$$QMAKE_CC CXX=$$QMAKE_CXX TARGET_OS=OS_WINDOWS_CROSSCOMPILE $(MAKE) OPT=\"$$QMAKE_CXXFLAGS $$QMAKE_CXXFLAGS_RELEASE\" libleveldb.a libmemenv.a && $$QMAKE_RANLIB $$PWD/src/leveldb/libleveldb.a && $$QMAKE_RANLIB $$PWD/src/leveldb/libmemenv.a
+} else:macx {
+    # we use QMAKE_CXXFLAGS_RELEASE even without RELEASE=1 because we use RELEASE to indicate linking preferences not -O preferences
+    genleveldb.commands = cd $$PWD/src/leveldb && CC=$$QMAKE_CC CXX=$$QMAKE_CXX AR=$${QMAKE_HOST}-ar TARGET_OS=Darwin $(MAKE) OPT=\"$$QMAKE_CXXFLAGS $$QMAKE_CXXFLAGS_RELEASE\" libleveldb.a libmemenv.a
+} else {
+    genleveldb.commands = cd $$PWD/src/leveldb && CC=$$QMAKE_CC CXX=$$QMAKE_CXX $(MAKE) OPT=\"$$QMAKE_CXXFLAGS $$QMAKE_CXXFLAGS_RELEASE\" libleveldb.a libmemenv.a
 }
 genleveldb.target = $$PWD/src/leveldb/libleveldb.a
 genleveldb.depends = FORCE
@@ -197,23 +202,27 @@ QMAKE_CXXFLAGS_WARN_ON = -fdiagnostics-show-option -Wall -Wextra -Wno-ignored-qu
 # Input
 DEPENDPATH += src src/json src/qt
 HEADERS += \
-    src/qt/transactiontablemodel.h \
-    src/qt/addresstablemodel.h \
-    src/qt/coincontroldialog.h \
-    src/qt/coincontroltreewidget.h \
-    src/qt/signverifymessagedialog.h \
-    src/qt/aboutdialog.h \
-    src/qt/editaddressdialog.h \
-    src/qt/bitcoinaddressvalidator.h \
     src/alert.h \
+    src/allocators.h \
+    src/wallet.h \
+    src/keystore.h \
+    src/version.h \
+    src/netbase.h \
+    src/clientversion.h \
+    src/threadsafety.h \
+    src/protocol.h \
+    src/ui_interface.h \
+    src/crypter.h \
     src/addrman.h \
     src/base58.h \
     src/bignum.h \
+    src/chainparams.h \
     src/checkpoints.h \
     src/compat.h \
     src/coincontrol.h \
     src/sync.h \
     src/util.h \
+    src/hash.h \
     src/uint256.h \
     src/kernel.h \
     src/scrypt.h \
@@ -225,6 +234,8 @@ HEADERS += \
     src/miner.h \
     src/net.h \
     src/key.h \
+    src/extkey.h \
+    src/eckey.h \
     src/db.h \
     src/txdb.h \
     src/walletdb.h \
@@ -232,11 +243,14 @@ HEADERS += \
     src/stealth.h \
     src/ringsig.h  \
     src/core.h  \
+    src/txmempool.h  \
     src/state.h \
     src/bloom.h \
     src/init.h \
-    src/irc.h \
     src/mruset.h \
+    src/rpcprotocol.h \
+    src/rpcserver.h \
+    src/rpcclient.h \
     src/json/json_spirit_writer_template.h \
     src/json/json_spirit_writer.h \
     src/json/json_spirit_value.h \
@@ -246,6 +260,13 @@ HEADERS += \
     src/json/json_spirit_reader.h \
     src/json/json_spirit_error_position.h \
     src/json/json_spirit.h \
+    src/qt/transactiontablemodel.h \
+    src/qt/addresstablemodel.h \
+    src/qt/coincontroldialog.h \
+    src/qt/coincontroltreewidget.h \
+    src/qt/aboutdialog.h \
+    src/qt/editaddressdialog.h \
+    src/qt/bitcoinaddressvalidator.h \
     src/qt/clientmodel.h \
     src/qt/guiutil.h \
     src/qt/transactionrecord.h \
@@ -254,89 +275,44 @@ HEADERS += \
     src/qt/monitoreddatamapper.h \
     src/qt/transactiondesc.h \
     src/qt/bitcoinamountfield.h \
-    src/wallet.h \
-    src/keystore.h \
     src/qt/walletmodel.h \
-    src/bitcoinrpc.h \
     src/qt/csvmodelwriter.h \
-    src/crypter.h \
     src/qt/qvalidatedlineedit.h \
     src/qt/bitcoinunits.h \
     src/qt/qvaluecombobox.h \
     src/qt/askpassphrasedialog.h \
-    src/protocol.h \
     src/qt/notificator.h \
-    src/qt/qtipcserver.h \
-    src/allocators.h \
-    src/ui_interface.h \
     src/qt/rpcconsole.h \
+    src/qt/paymentserver.h \
+    src/qt/peertablemodel.h \
+    src/qt/scicon.h \
     src/qt/trafficgraphwidget.h \
-    src/version.h \
-    src/netbase.h \
-    src/clientversion.h \
-    src/threadsafety.h \
     src/qt/messagemodel.h \
     src/qt/shadowgui.h \
     src/qt/shadowbridge.h \
-    src/qt/addressbookpage.h
+    src/qt/bridgetranslations.h
 
 SOURCES += \
-    src/qt/transactiontablemodel.cpp \
-    src/qt/addresstablemodel.cpp \
-    src/qt/coincontroldialog.cpp \
-    src/qt/coincontroltreewidget.cpp \
-    src/qt/signverifymessagedialog.cpp \
-    src/qt/aboutdialog.cpp \
-    src/qt/editaddressdialog.cpp \
-    src/qt/bitcoinaddressvalidator.cpp \
     src/alert.cpp \
     src/version.cpp \
+    src/chainparams.cpp \
     src/sync.cpp \
     src/smessage.cpp \
     src/util.cpp \
+    src/hash.cpp \
     src/netbase.cpp \
     src/key.cpp \
+    src/extkey.cpp \
+    src/eckey.cpp \
     src/script.cpp \
     src/main.cpp \
     src/miner.cpp \
     src/init.cpp \
     src/net.cpp \
-    src/irc.cpp \
     src/checkpoints.cpp \
     src/addrman.cpp \
     src/db.cpp \
     src/walletdb.cpp \
-    src/qt/clientmodel.cpp \
-    src/qt/guiutil.cpp \
-    src/qt/transactionrecord.cpp \
-    src/qt/optionsmodel.cpp \
-    src/qt/monitoreddatamapper.cpp \
-    src/qt/transactiondesc.cpp \
-    src/qt/bitcoinstrings.cpp \
-    src/qt/bitcoinamountfield.cpp \
-    src/wallet.cpp \
-    src/keystore.cpp \
-    src/qt/walletmodel.cpp \
-    src/bitcoinrpc.cpp \
-    src/rpcdump.cpp \
-    src/rpcnet.cpp \
-    src/rpcmining.cpp \
-    src/rpcwallet.cpp \
-    src/rpcblockchain.cpp \
-    src/rpcrawtransaction.cpp \
-    src/rpcsmessage.cpp \
-    src/qt/csvmodelwriter.cpp \
-    src/crypter.cpp \
-    src/qt/qvalidatedlineedit.cpp \
-    src/qt/bitcoinunits.cpp \
-    src/qt/qvaluecombobox.cpp \
-    src/qt/askpassphrasedialog.cpp \
-    src/protocol.cpp \
-    src/qt/notificator.cpp \
-    src/qt/qtipcserver.cpp \
-    src/qt/rpcconsole.cpp \
-    src/qt/trafficgraphwidget.cpp \
-    src/qt/messagemodel.cpp \
     src/noui.cpp \
     src/kernel.cpp \
     src/scrypt-arm.S \
@@ -347,29 +323,71 @@ SOURCES += \
     src/stealth.cpp  \
     src/ringsig.cpp  \
     src/core.cpp  \
+    src/txmempool.cpp  \
+    src/wallet.cpp \
+    src/keystore.cpp \
+    src/state.cpp \
+    src/bloom.cpp \
+    src/crypter.cpp \
+    src/protocol.cpp \
+    src/rpcprotocol.cpp \
+    src/rpcserver.cpp \
+    src/rpcclient.cpp \
+    src/rpcdump.cpp \
+    src/rpcnet.cpp \
+    src/rpcmining.cpp \
+    src/rpcwallet.cpp \
+    src/rpcblockchain.cpp \
+    src/rpcrawtransaction.cpp \
+    src/rpcsmessage.cpp \
+    src/rpcextkey.cpp \
+    src/rpcmnemonic.cpp \
+    src/qt/transactiontablemodel.cpp \
+    src/qt/coincontroldialog.cpp \
+    src/qt/coincontroltreewidget.cpp \
+    src/qt/aboutdialog.cpp \
+    src/qt/editaddressdialog.cpp \
+    src/qt/bitcoinaddressvalidator.cpp \
+    src/qt/clientmodel.cpp \
+    src/qt/guiutil.cpp \
+    src/qt/transactionrecord.cpp \
+    src/qt/optionsmodel.cpp \
+    src/qt/monitoreddatamapper.cpp \
+    src/qt/transactiondesc.cpp \
+    src/qt/bitcoinstrings.cpp \
+    src/qt/bitcoinamountfield.cpp \
+    src/qt/walletmodel.cpp \
+    src/qt/csvmodelwriter.cpp \
+    src/qt/qvalidatedlineedit.cpp \
+    src/qt/bitcoinunits.cpp \
+    src/qt/qvaluecombobox.cpp \
+    src/qt/askpassphrasedialog.cpp \
+    src/qt/notificator.cpp \
+    src/qt/rpcconsole.cpp \
+    src/qt/paymentserver.cpp \
+    src/qt/peertablemodel.cpp \
+    src/qt/scicon.cpp \
+    src/qt/trafficgraphwidget.cpp \
+    src/qt/messagemodel.cpp \
     src/qt/shadowgui.cpp \
     src/qt/shadow.cpp \
-    src/qt/shadowbridge.cpp \
-    src/qt/addressbookpage.cpp \
-    src/state.cpp \
-    src/bloom.cpp
+    src/qt/shadowbridge.cpp
+
 
 FORMS += \
     src/qt/forms/coincontroldialog.ui \
-    src/qt/forms/signverifymessagedialog.ui \
     src/qt/forms/aboutdialog.ui \
     src/qt/forms/editaddressdialog.ui \
     src/qt/forms/transactiondescdialog.ui \
     src/qt/forms/askpassphrasedialog.ui \
-    src/qt/forms/rpcconsole.ui \
-    src/qt/forms/addressbookpage.ui
+    src/qt/forms/rpcconsole.ui
 
 
 CODECFORTR = UTF-8
 
 # for lrelease/lupdate
-# also add new translations to src/qt/bitcoin.qrc under translations/
-TRANSLATIONS = $$files(src/qt/locale/bitcoin_*.ts)
+# also add new translations to shadow.qrc under translations/
+TRANSLATIONS = $$files(src/qt/locale/umbra*.ts)
 
 isEmpty(QMAKE_LRELEASE) {
     win32:QMAKE_LRELEASE = $$[QT_INSTALL_BINS]\\lrelease.exe
@@ -386,7 +404,7 @@ QMAKE_EXTRA_COMPILERS += TSQM
 
 # "Other files" to show in Qt Creator
 OTHER_FILES += \
-    doc/*.rst doc/*.txt doc/README README.md res/bitcoin-qt.rc
+    .travis.yml doc/*.rst doc/*.txt doc/README README.md res/bitcoin-qt.rc contrib/macdeploy/createdmg
 
 # platform specific defaults, if not overridden on command line
 isEmpty(BOOST_LIB_SUFFIX) {
@@ -439,7 +457,7 @@ macx:OBJECTIVE_SOURCES += src/qt/macdockiconhandler.mm \
 macx:LIBS += -framework Foundation -framework ApplicationServices -framework AppKit
 macx:DEFINES += MAC_OSX MSG_NOSIGNAL=0
 macx:ICON = src/qt/res/icons/shadow.icns
-macx:TARGET = "USC"
+macx:TARGET = "Umbra"
 macx:QMAKE_CFLAGS_THREAD += -pthread
 macx:QMAKE_LFLAGS_THREAD += -pthread
 macx:QMAKE_CXXFLAGS_THREAD += -pthread

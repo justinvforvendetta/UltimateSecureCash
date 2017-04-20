@@ -35,7 +35,7 @@ QString TransactionDesc::FormatTxStatus(const CWalletTx& wtx)
 QString TransactionDesc::toHTML(CWallet *wallet, CWalletTx &wtx)
 {
     QString strHTML;
-    QString explorer(fTestNet ? "http://vps2.shadow.cash:3001/" : "http://explorer.shadow.cash/");
+    QString explorer(fTestNet ? "http://testnet.shadowchain.info/" : "http://explorer.shadow.cash/");
 
     LOCK2(cs_main, wallet->cs_wallet);
     strHTML.reserve(4000);
@@ -103,7 +103,7 @@ QString TransactionDesc::toHTML(CWallet *wallet, CWalletTx &wtx)
                 if (wallet->IsMine(txout))
                 {
                     CTxDestination address;
-                    if (ExtractDestination(txout.scriptPubKey, address) && IsMine(*wallet, address))
+                    if (ExtractDestination(txout.scriptPubKey, address) && IsDestMine(*wallet, address))
                     {
                         if (wallet->mapAddressBook.count(address))
                         {
@@ -240,7 +240,7 @@ QString TransactionDesc::toHTML(CWallet *wallet, CWalletTx &wtx)
         strHTML += "<br><b>" + tr("Comment") + ":</b><br>" + GUIUtil::HtmlEscape(wtx.mapValue["comment"], true) + "<br>";
 
     char cbuf[256];
-    for (int k = 0; k < wtx.vout.size(); ++k)
+    for (uint32_t k = 0; k < wtx.vout.size(); ++k)
     {
         snprintf(cbuf, sizeof(cbuf), "n_%d", k);
         if (wtx.mapValue.count(cbuf) && !wtx.mapValue[cbuf].empty())
@@ -252,7 +252,7 @@ QString TransactionDesc::toHTML(CWallet *wallet, CWalletTx &wtx)
     strHTML += "<b>" + tr("Transaction ID") + ":</b> <a href='"+explorer+"tx/" + txid + "' target='_blank'>" + txid + "</a><br>";
 
     if (wtx.IsCoinBase() || wtx.IsCoinStake())
-        strHTML += "<br>" + tr("Generated coins must mature 510 blocks before they can be spent. When you generated this block, it was broadcast to the network to be added to the block chain. If it fails to get into the chain, its state will change to \"not accepted\" and it won't be spendable. This may occasionally happen if another node generates a block within a few seconds of yours.") + "<br>";
+        strHTML += "<br>" + tr("Generated coins must mature 120 blocks before they can be spent. When you generated this block, it was broadcast to the network to be added to the block chain. If it fails to get into the chain, its state will change to \"not accepted\" and it won't be spendable. This may occasionally happen if another node generates a block within a few seconds of yours.") + "<br>";
 
     //
     // Debug view
